@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+# Copyright (c) 2026 gustebeast
+# Source location: https://github.com/gustebeast/cat-nip-ball
 """Catnip ball — main build script.
 
 Run from the repo root:
@@ -5,9 +8,9 @@ Run from the repo root:
   py -3.12 -m src.build --part NAME  # build only one part
   py -3.12 -m src.build --list       # list available part names
 
-Writes one STEP per printed half (the slicer imports these), a matching STL
-for each, and an exploded, coloured assembly.step that the shared FreeCAD
-viewer opens. The assembly carries a floating 3-D build number.
+Writes one STEP per printed half (the slicer imports these) plus an exploded,
+coloured assembly.step that the shared FreeCAD viewer opens. The assembly
+carries a floating 3-D build number.
 """
 import argparse
 import pathlib
@@ -15,17 +18,17 @@ import sys
 
 import cadquery as cq
 
-# Shared Archive/3D helpers: colour() (hex / 0..255 / name) and the viewer.
+# Vendored shared toolkit (cadkit subtree) — a plain package import; the build
+# always runs via -m from the project root, so no sys.path hack is needed.
 from cadkit.cq_colors import color
 from cadkit.freecad import show
 from cadkit.step_export import export_step
 
-from .helpers import heal
 from .parts import build_bottom, build_top
 from .dimensions import R_OUT, EXPLODE_Z
 
 # Anchor every output to the project folder, regardless of where the build was
-# launched from (see Archive/3D/CLAUDE.md).
+# launched from (see cadkit/AGENTS.md).
 OUT = pathlib.Path(__file__).resolve().parent.parent
 
 # ── Phase toggles ────────────────────────────────────────────────────────────
@@ -39,15 +42,18 @@ COLOR = {
     "build_counter":      "#F0A878",   # salmon accent
 }
 
-bottom = heal(build_bottom(threads=THREADS, holes=HOLES))
-top    = heal(build_top(threads=THREADS, holes=HOLES))
+# NOT heal()ed: never ShapeFix/unify a threaded part (cadkit/THREADS_README.md
+# rule 7 — it hangs or crashes on the many-face helix; the raw solid exports and
+# slices fine).
+bottom = build_bottom(threads=THREADS, holes=HOLES)
+top    = build_top(threads=THREADS, holes=HOLES)
 
 # Map of part name → (workplane, output filename, optional note).
 PARTS = {
     "catnip_ball_bottom": (bottom, "catnip_ball_bottom.step",
-                           "male half — threaded skirt; drop the catnip in here"),
+                           "male half - threaded skirt; drop the catnip in here"),
     "catnip_ball_top":    (top,    "catnip_ball_top.step",
-                           "female half — counterbored socket; screws down onto the bottom"),
+                           "female half - threaded socket; screws down onto the bottom"),
 }
 
 

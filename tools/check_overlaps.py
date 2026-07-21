@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+# Copyright (c) 2026 gustebeast
+# Source location: https://github.com/gustebeast/cat-nip-ball
 """Overlap checker for the catnip ball.
 
 Project glue over the shared engine in ``cadkit/overlap_check.py``: supplies the
@@ -19,7 +22,6 @@ makes the halves clash somewhere unexpected).
 from __future__ import annotations
 
 import argparse
-import pathlib
 import sys
 
 from cadkit.overlap_check import run                     # noqa: E402  (shared engine)
