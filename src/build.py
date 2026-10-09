@@ -22,7 +22,9 @@ import cadquery as cq
 # always runs via -m from the project root, so no sys.path hack is needed.
 from cadkit.cq_colors import color
 from cadkit.freecad import show
-from cadkit.step_export import export_step
+from cadkit.step_export import export_print
+from cadkit.orientation import (PrintOrientation as PO,
+                                require_declared, unconfirmed)
 
 from .parts import build_bottom, build_top
 from .dimensions import R_OUT, EXPLODE_Z
@@ -56,10 +58,44 @@ PARTS = {
                            "female half - threaded socket; screws down onto the bottom"),
 }
 
+# ── PRINT ORIENTATION — each half's bed face, declared where cadkit's export
+# can read it (cadkit/AGENTS.md). Previously the STEPs exported as-modelled,
+# i.e. in their ASSEMBLED positions, so the bottom half arrived dome-down and
+# had to be flipped by hand in the slicer every time.
+#
+# This is not a new decision: dimensions.py has said it all along —
+#   "Printing (both halves dome-up, no supports): top prints on its flat
+#    equator rim, bottom prints skirt-down."
+# and the whole EQUATOR_OVERHANG design exists to serve that print (a
+# full-width collar at the equator so the ring the bottom half must print
+# over is only WALL + clearance wide, with the 45 deg chamfer stepping in to
+# the thread without adding a second overhang). The STEPs now match it.
+#
+# Which pose that is, is settled by the FOOTPRINT, measured:
+#   bottom  flip          102.7 mm2 on the plate   <- the flat skirt rim
+#           as modelled     0.0 mm2                   (dome touching a point)
+#   top     as modelled   125.7 mm2 on the plate   <- the flat equator rim
+#           flip            0.0 mm2
+# Every sideways candidate lands under 1.5 mm2: these are domes, and on their
+# side they balance on a point, whatever their unsupported area measures.
+PRINT_ORIENTATION = {
+    "catnip_ball_bottom": PO("flip",
+                             "skirt-down, dome up (dimensions.py) — the flat "
+                             "skirt rim is the only real footprint, 102.7 mm2 "
+                             "against a point as modelled. The equator collar "
+                             "and its 45 deg chamfer are shaped for exactly "
+                             "this print"),
+    "catnip_ball_top":    PO(None,
+                             "on its flat equator rim, dome up "
+                             "(dimensions.py) — modelled that way already, "
+                             "125.7 mm2 on the plate"),
+}
+require_declared(set(PARTS), PRINT_ORIENTATION)
+
 
 def _export(name):
     obj, path, note = PARTS[name]
-    export_step(obj, str(OUT / path))
+    export_print(obj, PRINT_ORIENTATION[name], str(OUT / path))
     suffix = f"  ({note})" if note else ""
     print(f"Wrote {path}{suffix}")
 
@@ -121,6 +157,14 @@ def main() -> None:
     p.add_argument("--part", help="Build only this part (skips assembly).")
     p.add_argument("--list", action="store_true", help="List part names and exit.")
     args = p.parse_args()
+
+    # 🚩 an UNCONFIRMED bed face is a guess nobody has checked — and the bed
+    # face decides which faces are overhangs, so work done on top of a guess
+    # can be silently wrong. Say so on every build (cadkit AGENTS.md).
+    flagged = unconfirmed(PRINT_ORIENTATION)
+    if flagged:
+        print("UNCONFIRMED print orientation (confirm with the user BEFORE "
+              "working on these parts): " + ", ".join(flagged), flush=True)
 
     if args.list:
         print("assembly")
