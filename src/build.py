@@ -9,7 +9,7 @@ Run from the repo root:
   py -3.12 -m src.build --list       # list available part names
 
 Writes one STEP per printed half (the slicer imports these) plus an exploded,
-coloured assembly.step that the shared FreeCAD viewer opens. The assembly
+coloured assembly.step that the web viewer (cadkit.web) shows. The assembly
 carries a floating 3-D build number.
 """
 import argparse
@@ -21,7 +21,7 @@ import cadquery as cq
 # Vendored shared toolkit (cadkit subtree) — a plain package import; the build
 # always runs via -m from the project root, so no sys.path hack is needed.
 from cadkit.cq_colors import color
-from cadkit.freecad import show
+from cadkit.web import show
 from cadkit.step_export import export_print
 from cadkit.orientation import (PrintOrientation as PO,
                                 require_declared, unconfirmed)
