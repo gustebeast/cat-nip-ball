@@ -90,7 +90,7 @@ N_RING      = 6              # holes per latitude ring
 RING_THETA  = 55.0           # degrees from the pole for each ring
 
 # ── Assembly viz ─────────────────────────────────────────────────────────────
-EXPLODE_Z   = 24.0           # top-half float height in the exploded assembly.step
+EXPLODE_Z   = 24.0           # top-half float height in the exploded viewer assembly
 
 # ── Invariants — a bad tweak should fail here, not on the printer ────────────
 EQUATOR_OVERHANG = R_OUT - COLLAR_R   # flat ring the bottom half prints over

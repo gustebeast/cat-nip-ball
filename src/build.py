@@ -8,9 +8,9 @@ Run from the repo root:
   py -3.12 -m src.build --part NAME  # build only one part
   py -3.12 -m src.build --list       # list available part names
 
-Writes one STEP per printed half (the slicer imports these) plus an exploded,
-coloured assembly.step that the web viewer (cadkit.web) shows. The assembly
-carries a floating 3-D build number.
+Writes one STEP per printed half (the slicer imports these) and hands an
+exploded, coloured assembly straight to the web viewer (cadkit.web), whose page
+states the build number.
 """
 import argparse
 import pathlib
@@ -27,7 +27,7 @@ from cadkit.orientation import (PrintOrientation as PO,
                                 require_declared, unconfirmed)
 
 from .parts import build_bottom, build_top
-from .dimensions import R_OUT, EXPLODE_Z
+from .dimensions import EXPLODE_Z
 
 # Anchor every output to the project folder, regardless of where the build was
 # launched from (see cadkit/AGENTS.md).
@@ -41,7 +41,6 @@ HOLES   = True
 COLOR = {
     "catnip_ball_top":    "#6Fae54",   # leaf green
     "catnip_ball_bottom": "#E0973C",   # warm amber
-    "build_counter":      "#F0A878",   # salmon accent
 }
 
 # NOT heal()ed: never ShapeFix/unify a threaded part (cadkit/THREADS_README.md
@@ -102,13 +101,13 @@ def _export(name):
 
 def collect_components():
     """Placed parts at their as-built (SEATED) positions, for the overlap gate
-    (tools/check_overlaps.py). Not the exploded assembly.step layout — the two
+    (tools/check_overlaps.py). Not the exploded viewer layout — the two
     halves are seated so the threaded joint is checked at its real fit."""
     return [("catnip_ball_bottom", bottom), ("catnip_ball_top", top)]
 
 
-# ── Build counter — a 3-D number floating above the assembly, bumped every
-# full build; tools/build_counter.txt is gitignored, starts at 1 if missing.
+# ── Build counter — bumped every full build and shown on the viewer page;
+# tools/build_counter.txt is gitignored, starts at 1 if missing.
 _COUNTER = pathlib.Path(__file__).resolve().parent.parent / "tools" / "build_counter.txt"
 
 
@@ -125,15 +124,6 @@ def _bump_build_counter() -> int:
     return n
 
 
-def _build_counter_model(n: int):
-    """Upright number floating above the assembly. None if the text engine
-    hiccups — a font failure must never break the build."""
-    try:
-        return cq.Workplane("XZ").center(0, R_OUT + EXPLODE_Z + 14).text(str(n), 8, 2)
-    except Exception:
-        return None
-
-
 def _export_assembly():
     build_n = _bump_build_counter()
     assembly = (
@@ -143,12 +133,8 @@ def _export_assembly():
         .add(top.translate((0, 0, EXPLODE_Z)), name="catnip_ball_top",
              color=color(COLOR["catnip_ball_top"]))
     )
-    counter = _build_counter_model(build_n)
-    if counter is not None:
-        assembly.add(counter, name="build_counter", color=color(COLOR["build_counter"]))
-    assembly.save(str(OUT / "assembly.step"), mode="default")
-    print(f"Wrote assembly.step  [build #{build_n}]", flush=True)
-    show(str(OUT / "assembly.step"))
+    print(f"Assembly: {len(assembly.children)} parts  [build #{build_n}]", flush=True)
+    show(assembly, root=OUT, build=build_n)
 
 
 def main() -> None:

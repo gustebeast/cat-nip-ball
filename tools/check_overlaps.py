@@ -32,8 +32,6 @@ INTENDED = {frozenset({"catnip_ball_bottom", "catnip_ball_top"})}
 
 
 def intended(na, nb) -> bool:
-    if "build_counter" in (na, nb):
-        return True
     return frozenset({na, nb}) in INTENDED
 
 

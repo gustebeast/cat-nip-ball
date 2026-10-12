@@ -43,7 +43,7 @@ so it always closes flush.
 Needs Python 3.10–3.12 and CadQuery (`py -3.12 -m pip install cadquery`).
 
 ```bash
-py -3.12 -m src.build            # writes both STEPs + assembly.step, opens the viewer
+py -3.12 -m src.build            # writes both STEPs, shows the assembly in the viewer
 py -3.12 -m src.dimensions       # print the resolved dimension table
 py -3.12 -m tools.check_overlaps # geometry gate: 0 = no unintended collisions
 ```
@@ -52,7 +52,8 @@ Outputs (gitignored — they're build artifacts):
 
 - `catnip_ball_bottom.step` — male half, threaded skirt
 - `catnip_ball_top.step` — female half, threaded socket
-- `assembly.step` — both halves, exploded and coloured, for the viewer
+
+The viewer shows both halves, exploded and coloured, straight from the build.
 
 ## Customising
 
